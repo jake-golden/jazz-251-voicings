@@ -14,7 +14,8 @@ diagram, or notation.
 Open `index.html` in a browser. There is no build, no dependencies, no server, and no tests.
 
 To exercise the internals from a browser console, the top-level bindings `state`, `generate()`,
-`playable()`, `blockers()`, `deck`, `renderKeys()` and `renderDrill()` are all reachable —
+`playable()`, `blockers()`, `fixedCombos()`, `defaultState()`, `deck`, `renderKeys()` and
+`renderDrill()` are all reachable —
 that's how this was verified. `localStorage` needs a real origin, so persistence must be tested
 over `http://` (`python3 -m http.server`), not from a `file://` snapshot.
 
@@ -28,8 +29,9 @@ failure mode impossible and keeps it to one thing to AirDrop to a phone or drop 
 
 ## Data model
 
-The `DATA` section at the top of the script is the source of truth and the place to add
-voicings. `FORMULAS` is `mode → quality → position → variant → formula`:
+The `DATA` section at the top of the script is the source of truth. **The voicing set is final**
+— these are all the voicings the user will ever use, so don't add extensibility (an add-voicing
+form, migrations for new cells). Edit the data only to fix a transcription error. `FORMULAS` is `mode → quality → position → variant → formula`:
 
 - **Formulas are opaque display strings.** Nothing parses them or converts them to notes. This
   is deliberate: the user's notation is internally inconsistent (`2` vs `9`, varying `♭`
