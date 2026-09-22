@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2-5-1 Voicing Randomizer</title>
+<style>
+:root {
+  --bg: #fbfaf7;
+  --card: #ffffff;
+  --ink: #16150f;
+  --dim: #6d6a5e;
+  --line: #ddd9cc;
+  --accent: #8a5a1c;
+  --accent-soft: #f2e6d2;
+  --off: #b4afa0;
+  --radius: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14140f;
+    --card: #1e1e18;
+    --ink: #f0ede3;
+    --dim: #9d9887;
+    --line: #35342b;
+    --accent: #e0a75c;
+    --accent-soft: #3a2f1c;
+    --off: #56544a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 16px 64px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+main { max-width: 620px; margin: 0 auto; }
+
+.topbar { max-width: 620px; margin: 0 auto; padding: 20px 0 12px; }
+.topbar h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ---------- drill card ---------- */
+
+.drill {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.keyline {
+  margin: 0 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.chords { list-style: none; margin: 0; padding: 0; }
+
+.chords li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 7px 0;
+}
+
+.chords li + li { border-top: 1px solid var(--line); }
+
+.sym { font-size: 27px; font-weight: 600; letter-spacing: -.01em; }
+
+.formula {
+  font: 500 20px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--ink);
+  justify-self: end;
+}
+
+.pos {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.notice { margin: 0; color: var(--dim); white-space: pre-line; }
+
+/* ---------- advance ---------- */
+
+.advance { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 14px 0 26px; }
+
+.next {
+  flex: 1 1 180px;
+  min-height: 54px;
+  padding: 0 24px;
+  font: 600 18px/1 inherit;
+  color: var(--bg);
+  background: var(--ink);
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.next:active { opacity: .8; }
+
+.timer { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--dim); }
+.timer input[type=number] {
+  width: 56px;
+  min-height: 38px;
+  padding: 4px 8px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+/* ---------- panels ---------- */
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+.panel > summary {
+  padding: 15px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  cursor: pointer;
+  list-style: none;
+}
+.panel > summary::-webkit-details-marker { display: none; }
+.panel > summary::after { content: " +"; }
+.panel[open] > summary::after { content: " \2212"; }
+
+.panel-body { padding: 0 18px 18px; }
+
+.hint { margin: 10px 0 0; font-size: 13px; color: var(--dim); }
+
+.check { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--dim); }
+
+.seg { margin: 14px 0 0; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); }
+.seg legend { display: none; }
+.seg > label { display: flex; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; }
+.seg input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ---------- keys ---------- */
+
+.bulk { display: flex; gap: 8px; margin-bottom: 12px; }
+.bulk button {
+  padding: 8px 16px;
+  font: 600 13px/1 inherit;
+  color: var(--dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.keygrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+.keygrid button {
+  min-height: 48px;
+  padding: 4px;
+  font: 600 16px/1.2 inherit;
+  color: var(--off);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.keygrid button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* ---------- voicing grids ---------- */
+
+.modeblock + .modeblock { margin-top: 26px; }
+
+.modehead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.modehead .bulk { margin-bottom: 0; }
+
+.modeblock h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.variants { display: flex; gap: 18px; margin: 14px 0 0; }
+.variants label { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.variants input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+table.grid { width: 100%; border-collapse: collapse; }
+
+table.grid th {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--dim);
+  text-align: center;
+  padding: 0 0 8px;
+}
+table.grid th.rowhead { text-align: left; white-space: nowrap; }
+
+table.grid td { text-align: center; padding: 3px 0; }
+table.grid th.rowhead[scope="row"] {
+  text-align: left;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 3px 10px 3px 0;
+}
+.rolehint { font-weight: 400; font-size: 12px; color: var(--dim); }
+
+table.grid input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+table.grid input:disabled { cursor: not-allowed; opacity: .28; }
+
+@media (min-width: 560px) {
+  .chords li { grid-template-columns: 1fr auto 62px; }
+  .pos { grid-column: auto; text-align: right; }
+}
+
+.chords.nopos li { grid-template-columns: 1fr auto; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>2&ndash;5&ndash;1 Voicings</h1>
+</header>
+
+<main>
+
+  <section class="drill" id="drill" aria-live="polite">
+    <p class="keyline" id="keyline"></p>
+    <ol class="chords" id="chords"></ol>
+    <p class="notice" id="notice" hidden></p>
+  </section>
+
+  <div class="advance">
+    <button id="next" class="next">Next &rarr;</button>
+    <label class="timer">
+      <input type="checkbox" id="timerOn">
+      <span>Auto-advance</span>
+      <input type="number" id="timerSeconds" min="1" max="60" step="1" inputmode="numeric">
+      <span>s</span>
+    </label>
+  </div>
+
+  <details class="panel" id="panelDisplay">
+    <summary>Display</summary>
+    <div class="panel-body">
+      <label class="check"><input type="checkbox" id="showFormula"><span>Show voicing <span class="mono">(1-3-5-7)</span></span></label>
+      <label class="check"><input type="checkbox" id="showPosition"><span>Show position <span class="mono">(2nd)</span></span></label>
+      <fieldset class="seg">
+        <legend>Show</legend>
+        <label><input type="radio" name="layout" value="progression"><span>Full progression</span></label>
+        <label><input type="radio" name="layout" value="single"><span>Single chord</span></label>
+      </fieldset>
+      <fieldset class="seg" id="posModeBox">
+        <legend>Position</legend>
+        <label><input type="radio" name="posMode" value="shuffled"><span>Position changes for each chord</span></label>
+        <label><input type="radio" name="posMode" value="fixed"><span>Same position for all three</span></label>
+      </fieldset>
+      <fieldset class="seg">
+        <legend>Key spelling</legend>
+        <label><input type="radio" name="spelling" value="flat"><span>Flat-leaning</span></label>
+        <label><input type="radio" name="spelling" value="conventional"><span>Conventional</span></label>
+        <p class="hint">Note: affects minor keys only (in major both spellings are identical)</p>
+      </fieldset>
+    </div>
+  </details>
+
+  <details class="panel" id="panelKeys">
+    <summary>Keys</summary>
+    <div class="panel-body">
+      <div class="bulk"><button type="button" data-keys="all">All</button><button type="button" data-keys="none">None</button></div>
+      <div class="keygrid" id="keygrid"></div>
+    </div>
+  </details>
+
+  <details class="panel" id="panelVoicings" open>
+    <summary>Voicings</summary>
+    <div class="panel-body" id="grids"></div>
+  </details>
+
+</main>
+
+<script>
+// ===========================================================================
+//  DATA  --  edit this section to add or change voicings
+// ===========================================================================
+// ---------------------------------------------------------------------------
+// THE DATA FILE
+//
+// Formulas are opaque display strings. Nothing in this app ever converts them
+// to note names, so you can write them exactly as your class notates them --
+// the flat placements and the 2-vs-9 inconsistencies pass through untouched.
+//
+// TO ADD A VOICING: add a line to FORMULAS below. That's the whole process.
+//
+// Variant keys inside a position:
+//   "_"        this position has a single form; the Extended/Grounded filter
+//              does not apply to it (minor 1st and 3rd position)
+//   extended / grounded
+//              the two forms of minor 2nd and 4th position
+//   null       instead of an object: this cell does not exist and renders as
+//              a greyed-out, unselectable checkbox (mMaj7 outside 1st position)
+// ---------------------------------------------------------------------------
+
+const POSITIONS = [1, 2, 3, 4];
+const POSITION_LABELS = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th" };
+
+const VARIANT_LABELS = { extended: "Extended (Ex)", grounded: "Grounded (Gr)" };
+const VARIANT_SHORT  = { extended: "Ex", grounded: "Gr" };
+
+const MODES = {
+  major: {
+    label: "Major",
+    variants: null,
+    roles: [
+      { id: "ii", label: "ii", qualities: ["m7"] },
+      { id: "V", label: "V", qualities: ["dom7"] },
+      { id: "i", label: "I", qualities: ["maj7", "six"] },
+    ],
+    qualities: [
+      { id: "m7", label: "m7", symbol: "m7", role: "ii" },
+      { id: "dom7", label: "7", symbol: "7", role: "V" },
+      { id: "maj7", label: "maj7", symbol: "maj7", role: "i" },
+      { id: "six", label: "6", symbol: "6", role: "i" },
+    ],
+  },
+  minor: {
+    label: "Minor",
+    variants: ["extended", "grounded"],
+    roles: [
+      { id: "ii", label: "ii", qualities: ["m7b5"] },
+      { id: "V", label: "V", qualities: ["dom7b9"] },
+      { id: "i", label: "i", qualities: ["mmaj7", "m6"] },
+    ],
+    qualities: [
+      { id: "m7b5", label: "m7♭5", symbol: "m7♭5", role: "ii" },
+      { id: "dom7b9", label: "7♭9", symbol: "7♭9", role: "V" },
+      { id: "mmaj7", label: "mMaj7", symbol: "mMaj7", role: "i" },
+      { id: "m6", label: "m6", symbol: "m6", role: "i" },
+    ],
+  },
+};
+
+// mode -> quality -> position -> variant -> formula
+const FORMULAS = {
+  major: {
+    m7: {
+      1: { _: "1-3-5-7" },
+      2: { _: "3-5-7-9" },
+      3: { _: "5-7-1-3" },
+      4: { _: "7-2-3-5" },
+    },
+    dom7: {
+      1: { _: "5-7-2-3" },
+      2: { _: "7-9-3-6" },
+      3: { _: "2-3-5-7" },
+      4: { _: "3-6-7-9" },
+    },
+    maj7: {
+      1: { _: "1-3-5-7" },
+      2: { _: "3-5-7-9" },
+      3: { _: "5-7-1-3" },
+      4: { _: "7-1-3-5" },
+    },
+    six: {
+      1: { _: "1-3-5-6" },
+      2: { _: "3-5-6-9" },
+      3: { _: "5-6-1-3" },
+      4: { _: "6-2-3-5" },
+    },
+  },
+  minor: {
+    m7b5: {
+      1: { _: "1-3-♭5-7" },
+      2: { extended: "3-♭5-7-9", grounded: "3-♭5-7-1" },
+      3: { _: "♭5-7-1-3" },
+      4: { extended: "7-1-3-♭5", grounded: "7-1-3-♭5" },
+    },
+    dom7b9: {
+      1: { _: "5-7-♭9-3" },
+      2: { extended: "7-♭9-3-6", grounded: "7-♭9-3-5" },
+      3: { _: "♭9-3-5-7" },
+      4: { extended: "3-5-7-♭9", grounded: "3-5-7-♭9" },
+    },
+    mmaj7: {
+      1: { _: "1-♭3-5-7" },
+      2: null,
+      3: null,
+      4: null,
+    },
+    m6: {
+      1: { _: "1-♭3-5-6" },
+      2: { extended: "♭3-5-6-9", grounded: "♭3-5-6-1" },
+      3: { _: "5-6-1-♭3" },
+      4: { extended: "6-2-♭3-5", grounded: "6-1-♭3-5" },
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Keys, in circle-of-fourths order. `pc` is the pitch class (0-11) and is the
+// ONLY thing stored in settings -- names change with the spelling toggle, so
+// storing a name would silently drop a selected "Ab" on switching to sharps.
+// ---------------------------------------------------------------------------
+
+const F = "♭";
+const S = "♯";
+
+// Used for major in BOTH spellings, and for minor under flat-leaning spelling.
+const FLAT_TABLE = [
+  { pc: 0,  name: "C",      ii: "D",      V: "G",      i: "C"      },
+  { pc: 5,  name: "F",      ii: "G",      V: "C",      i: "F"      },
+  { pc: 10, name: "B" + F,  ii: "C",      V: "F",      i: "B" + F  },
+  { pc: 3,  name: "E" + F,  ii: "F",      V: "B" + F,  i: "E" + F  },
+  { pc: 8,  name: "A" + F,  ii: "B" + F,  V: "E" + F,  i: "A" + F  },
+  { pc: 1,  name: "D" + F,  ii: "E" + F,  V: "A" + F,  i: "D" + F  },
+  { pc: 6,  name: "G" + F,  ii: "A" + F,  V: "D" + F,  i: "G" + F  },
+  { pc: 11, name: "B",      ii: "C" + S,  V: "F" + S,  i: "B"      },
+  { pc: 4,  name: "E",      ii: "F" + S,  V: "B",      i: "E"      },
+  { pc: 9,  name: "A",      ii: "B",      V: "E",      i: "A"      },
+  { pc: 2,  name: "D",      ii: "E",      V: "A",      i: "D"      },
+  { pc: 7,  name: "G",      ii: "A",      V: "D",      i: "G"      },
+];
+
+// Minor under conventional spelling: standard key signatures. Differs from the
+// flat table only at pitch classes 8, 1 and 6 (Ab/G#, Db/C#, Gb/F#).
+const MINOR_CONVENTIONAL = FLAT_TABLE.map((k) => {
+  if (k.pc === 8)  return { pc: 8,  name: "G" + S, ii: "A" + S, V: "D" + S, i: "G" + S };
+  if (k.pc === 1)  return { pc: 1,  name: "C" + S, ii: "D" + S, V: "G" + S, i: "C" + S };
+  if (k.pc === 6)  return { pc: 6,  name: "F" + S, ii: "G" + S, V: "C" + S, i: "F" + S };
+  return k;
+});
+
+const KEYS = {
+  major: { flat: FLAT_TABLE, conventional: FLAT_TABLE },
+  minor: { flat: FLAT_TABLE, conventional: MINOR_CONVENTIONAL },
+};
+
+const ALL_PCS = FLAT_TABLE.map((k) => k.pc);
+
+// ===========================================================================
+//  APP
+// ===========================================================================
+
+const STORE_KEY = "v251.settings.v1";
+const cellKey = (m, q, p) => `${m}.${q}.${p}`;
+
+// ---------------------------------------------------------------- state
+
+function defaultState() {
+  const cells = [];
+  for (const [mid, mode] of Object.entries(MODES))
+    for (const q of mode.qualities)
+      for (const p of POSITIONS)
+        if (FORMULAS[mid][q.id][p]) cells.push(cellKey(mid, q.id, p));
+
+  return {
+    cells,
+    variants: ["extended", "grounded"],
+    keys: ALL_PCS.slice(),
+    spelling: "flat",
+    showFormula: true,
+    showPosition: true,
+    layout: "progression",   // "progression" | "single"
+    posMode: "shuffled",     // "shuffled" | "fixed"
+    timerOn: false,
+    timerSeconds: 8,
+  };
+}
+
+const state = (() => {
+  const s = defaultState();
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) Object.assign(s, JSON.parse(raw));
+  } catch (e) { /* private mode, blocked storage -- defaults are fine */ }
+  s.cells = new Set(s.cells);
+  s.variants = new Set(s.variants);
+  s.keys = new Set(s.keys);
+  return s;
+})();
+
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      ...state,
+      cells: [...state.cells],
+      variants: [...state.variants],
+      keys: [...state.keys],
+    }));
+  } catch (e) { /* ignore */ }
+}
+
+// ---------------------------------------------------------------- pools
+
+// Every formula available in one cell, honouring the Extended/Grounded filter.
+// "_" positions ignore the filter entirely. Identical formulas are deduped so
+// minor 4th position (whose ii and V match across both variants) doesn't get
+// drawn twice as often as the others.
+function formulasFor(m, q, p) {
+  const cell = FORMULAS[m][q][p];
+  if (!cell) return [];
+  const out = [], seen = new Set();
+  for (const [variant, formula] of Object.entries(cell)) {
+    if (variant !== "_" && !state.variants.has(variant)) continue;
+    if (seen.has(formula)) continue;
+    seen.add(formula);
+    out.push({ variant, formula });
+  }
+  return out;
+}
+
+// Flat pool across every quality in the role, so the i chord draws uniformly
+// from the maj7 and 6 rows combined rather than picking a quality first.
+function poolForRole(m, role) {
+  const out = [];
+  for (const qid of role.qualities)
+    for (const p of POSITIONS) {
+      if (!state.cells.has(cellKey(m, qid, p))) continue;
+      for (const f of formulasFor(m, qid, p))
+        out.push({ quality: qid, position: p, ...f });
+    }
+  return out;
+}
+
+// Which variant "contexts" a position offers. A position built from "_" cells
+// has a single form and ignores the Extended/Grounded filter; the others offer
+// whichever of the two are currently checked.
+function variantContexts(m, p) {
+  const mode = MODES[m];
+  if (!mode.variants) return ["_"];
+  const set = new Set();
+  for (const q of mode.qualities) {
+    const cell = FORMULAS[m][q.id][p];
+    if (!cell) continue;
+    if (cell["_"]) set.add("_");
+    for (const v of mode.variants) if (cell[v] && state.variants.has(v)) set.add(v);
+  }
+  return [...set];
+}
+
+// Every (position, variant) enabled for ALL roles at once -- the only
+// combinations a fixed-position progression can be built from.
+function fixedCombos(m) {
+  const mode = MODES[m];
+  const combos = [];
+  for (const p of POSITIONS) {
+    for (const ctx of variantContexts(m, p)) {
+      const perRole = mode.roles.map((role) => {
+        const opts = [];
+        for (const qid of role.qualities) {
+          if (!state.cells.has(cellKey(m, qid, p))) continue;
+          const cell = FORMULAS[m][qid][p];
+          if (!cell) continue;
+          const formula = cell["_"] ?? cell[ctx];
+          if (formula)
+            opts.push({ quality: qid, position: p, variant: cell["_"] ? "_" : ctx, formula });
+        }
+        return opts;
+      });
+      if (perRole.every((o) => o.length)) combos.push({ position: p, variant: ctx, perRole });
+    }
+  }
+  return combos;
+}
+
+function playable(m) {
+  if (state.layout === "single") return MODES[m].roles.some((r) => poolForRole(m, r).length > 0);
+  if (state.posMode === "fixed") return fixedCombos(m).length > 0;
+  return MODES[m].roles.every((r) => poolForRole(m, r).length > 0);
+}
+
+function blockers() {
+  if (state.keys.size === 0)
+    return "No keys selected.\nPick at least one in the Keys menu.";
+
+  const lines = [];
+  for (const [mid, mode] of Object.entries(MODES)) {
+    if (playable(mid)) continue;
+    const empty = mode.roles.filter((r) => poolForRole(mid, r).length === 0);
+    if (!empty.length && state.posMode === "fixed")
+      // every role has something, but never at the same position
+      lines.push(`${mode.label}: no single position has ${mode.roles.map((r) => r.label).join(", ")} all enabled`);
+    else if (state.layout === "single")
+      lines.push(`${mode.label}: no voicings enabled`);
+    else
+      lines.push(`${mode.label}: nothing enabled for ${empty.map((r) => r.label).join(", ")}`);
+  }
+  return lines.length === Object.keys(MODES).length ? "Nothing to drill.\n" + lines.join("\n") : null;
+}
+
+// ---------------------------------------------------------------- randomizer
+
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// A shuffled deck, not an independent draw: every enabled key comes up once
+// before any repeats. Reset to [] whenever the key selection changes.
+let deck = [];
+
+function drawKey() {
+  const enabled = ALL_PCS.filter((pc) => state.keys.has(pc));
+  if (!enabled.length) return null;
+  if (!deck.length) deck = shuffle(enabled.slice());
+  return deck.pop();
+}
+
+function generate() {
+  const modes = Object.keys(MODES).filter(playable);
+  const pc = drawKey();
+  if (!modes.length || pc === null) return null;
+
+  const mid = pick(modes);
+  const mode = MODES[mid];
+  const key = KEYS[mid][state.spelling].find((k) => k.pc === pc);
+
+  const dress = (hit) => {
+    const q = mode.qualities.find((x) => x.id === hit.quality);
+    return {
+      root: key[q.role],
+      symbol: q.symbol,
+      formula: hit.formula,
+      position: hit.position,
+      variant: hit.variant,
+    };
+  };
+
+  // One chord, drawn uniformly from every enabled cell in the mode.
+  if (state.layout === "single") {
+    const pool = mode.roles.flatMap((r) => poolForRole(mid, r));
+    return { key, mode, chords: [dress(pick(pool))] };
+  }
+
+  // One position for the whole progression, preserving its voice-leading.
+  if (state.posMode === "fixed") {
+    const combo = pick(fixedCombos(mid));
+    return { key, mode, chords: combo.perRole.map((opts) => dress(pick(opts))) };
+  }
+
+  // Each chord draws its own position.
+  return {
+    key,
+    mode,
+    chords: mode.roles.map((role) => dress(pick(poolForRole(mid, role)))),
+  };
+}
+
+// ---------------------------------------------------------------- render
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+
+function renderDrill(prog) {
+  const keyline = $("keyline"), chords = $("chords"), notice = $("notice");
+  chords.replaceChildren();
+
+  const why = blockers();
+  if (why || !prog) {
+    keyline.textContent = "";
+    notice.textContent = why || "Nothing to drill.";
+    notice.hidden = false;
+    return;
+  }
+  notice.hidden = true;
+
+  keyline.textContent = `Key of ${prog.key.name} ${prog.mode.label}`;
+  chords.classList.toggle("nopos", !state.showPosition);
+
+  for (const c of prog.chords) {
+    const li = el("li");
+    li.append(el("span", "sym", c.root + c.symbol));
+    if (state.showFormula) li.append(el("span", "formula", c.formula));
+    if (state.showPosition) {
+      const short = VARIANT_SHORT[c.variant];
+      const tag = POSITION_LABELS[c.position] + (short ? " · " + short : "");
+      li.append(el("span", "pos", tag));
+    }
+    chords.append(li);
+  }
+}
+
+let current = null;
+
+function next() {
+  current = generate();
+  renderDrill(current);
+  restartTimer();
+}
+
+// ---------------------------------------------------------------- timer
+
+let timerId = null;
+
+function restartTimer() {
+  clearTimeout(timerId);
+  timerId = null;
+  if (state.timerOn && current) timerId = setTimeout(next, state.timerSeconds * 1000);
+}
+
+// ---------------------------------------------------------------- key menu
+
+function renderKeys() {
+  const wrap = $("keygrid");
+  wrap.replaceChildren();
+
+  // The menu is shared by both modes, so under conventional spelling the three
+  // keys that differ are labelled with both names rather than picking a side.
+  const flat = KEYS.major.flat;
+  const conv = KEYS.minor.conventional;
+
+  flat.forEach((k, idx) => {
+    const alt = conv[idx].name;
+    const label = state.spelling === "conventional" && alt !== k.name
+      ? `${k.name}/${alt}` : k.name;
+
+    const b = el("button", null, label);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(state.keys.has(k.pc)));
+    b.addEventListener("click", () => {
+      state.keys.has(k.pc) ? state.keys.delete(k.pc) : state.keys.add(k.pc);
+      b.setAttribute("aria-pressed", String(state.keys.has(k.pc)));
+      deck = [];
+      save();
+      if (!current || blockers()) next();
+    });
+    wrap.append(b);
+  });
+}
+
+// ---------------------------------------------------------------- voicing grids
+
+function renderGrids() {
+  const host = $("grids");
+  host.replaceChildren();
+
+  for (const [mid, mode] of Object.entries(MODES)) {
+    const block = el("section", "modeblock");
+
+    const head = el("div", "modehead");
+    head.append(el("h2", null, mode.label));
+    const bulk = el("div", "bulk");
+    for (const kind of ["all", "none"]) {
+      const b = el("button", null, kind === "all" ? "All" : "None");
+      b.type = "button";
+      b.addEventListener("click", () => {
+        for (const q of mode.qualities)
+          for (const p of POSITIONS) {
+            if (!FORMULAS[mid][q.id][p]) continue;   // skip cells that don't exist
+            const key = cellKey(mid, q.id, p);
+            if (kind === "all") state.cells.add(key);
+            else state.cells.delete(key);
+          }
+        save();
+        renderGrids();
+        next();
+      });
+      bulk.append(b);
+    }
+    head.append(bulk);
+    block.append(head);
+
+    const table = el("table", "grid");
+    const thead = el("thead");
+    const hr = el("tr");
+    hr.append(el("th", "rowhead"));
+    for (const p of POSITIONS) hr.append(el("th", null, POSITION_LABELS[p]));
+    thead.append(hr);
+    table.append(thead);
+
+    const tbody = el("tbody");
+    for (const q of mode.qualities) {
+      const tr = el("tr");
+      const th = el("th", "rowhead");
+      th.scope = "row";
+      th.append(document.createTextNode(q.label + " "));
+      const roleLabel = mode.roles.find((r) => r.id === q.role).label;
+      th.append(el("span", "rolehint", `(${roleLabel})`));
+      tr.append(th);
+
+      for (const p of POSITIONS) {
+        const td = el("td");
+        const cb = el("input");
+        cb.type = "checkbox";
+        const exists = !!FORMULAS[mid][q.id][p];
+        if (!exists) {
+          cb.disabled = true;
+          cb.title = `${q.label} has no ${POSITION_LABELS[p]} position`;
+        } else {
+          const key = cellKey(mid, q.id, p);
+          cb.checked = state.cells.has(key);
+          cb.addEventListener("change", () => {
+            cb.checked ? state.cells.add(key) : state.cells.delete(key);
+            save();
+            next();
+          });
+        }
+        td.append(cb);
+        tr.append(td);
+      }
+      tbody.append(tr);
+    }
+    table.append(tbody);
+    block.append(table);
+
+    if (mode.variants) {
+      const row = el("div", "variants");
+      for (const v of mode.variants) {
+        const lab = el("label");
+        const cb = el("input");
+        cb.type = "checkbox";
+        cb.checked = state.variants.has(v);
+        cb.addEventListener("change", () => {
+          cb.checked ? state.variants.add(v) : state.variants.delete(v);
+          save();
+          next();
+        });
+        lab.append(cb, el("span", null, VARIANT_LABELS[v]));
+        row.append(lab);
+      }
+      block.append(row);
+    }
+    host.append(block);
+  }
+}
+
+// ---------------------------------------------------------------- wiring
+
+function bindCheck(id, prop, after) {
+  const node = $(id);
+  node.checked = state[prop];
+  node.addEventListener("change", () => {
+    state[prop] = node.checked;
+    save();
+    after?.();
+  });
+}
+
+bindCheck("showFormula", "showFormula", () => renderDrill(current));
+bindCheck("showPosition", "showPosition", () => renderDrill(current));
+bindCheck("timerOn", "timerOn", restartTimer);
+
+const secs = $("timerSeconds");
+secs.value = state.timerSeconds;
+secs.addEventListener("change", () => {
+  const v = Math.min(60, Math.max(1, parseInt(secs.value, 10) || 8));
+  state.timerSeconds = v;
+  secs.value = v;
+  save();
+  restartTimer();
+});
+
+function bindRadio(name, prop, after) {
+  for (const radio of document.querySelectorAll(`input[name="${name}"]`)) {
+    radio.checked = radio.value === state[prop];
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      state[prop] = radio.value;
+      save();
+      after?.();
+    });
+  }
+}
+
+// The position choice only means anything for a three-chord progression.
+function syncPosMode() {
+  document.getElementById("posModeBox").hidden = state.layout === "single";
+}
+
+bindRadio("spelling", "spelling", () => { renderKeys(); next(); });
+bindRadio("layout", "layout", () => { syncPosMode(); next(); });
+bindRadio("posMode", "posMode", next);
+syncPosMode();
+
+for (const b of document.querySelectorAll("[data-keys]")) {
+  b.addEventListener("click", () => {
+    state.keys = b.dataset.keys === "all" ? new Set(ALL_PCS) : new Set();
+    deck = [];
+    save();
+    renderKeys();
+    next();
+  });
+}
+
+$("next").addEventListener("click", next);
+
+renderKeys();
+renderGrids();
+next();
+</script>
+</body>
+</html>
