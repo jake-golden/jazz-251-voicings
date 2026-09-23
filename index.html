@@ -304,7 +304,7 @@ table.grid input:disabled { cursor: not-allowed; opacity: .28; }
         <legend>Key spelling</legend>
         <label><input type="radio" name="spelling" value="flat"><span>Flat-leaning</span></label>
         <label><input type="radio" name="spelling" value="conventional"><span>Conventional</span></label>
-        <p class="hint">Note: affects minor keys only (in major both spellings are identical)</p>
+        <p class="hint">Note: conventional uses F&#9839; in major, and G&#9839;/C&#9839;/F&#9839; in minor</p>
       </fieldset>
     </div>
   </details>
@@ -475,8 +475,16 @@ const MINOR_CONVENTIONAL = FLAT_TABLE.map((k) => {
   return k;
 });
 
+// Major under conventional spelling. Classical practice takes F# major over Gb
+// at this pitch class -- both carry six accidentals, so the tie breaks on
+// convention, not on the key signature. The flat table keeps Gb, which is how
+// jazz reads it.
+const MAJOR_CONVENTIONAL = FLAT_TABLE.map((k) =>
+  k.pc === 6 ? { pc: 6, name: "F" + S, ii: "G" + S, V: "C" + S, i: "F" + S } : k
+);
+
 const KEYS = {
-  major: { flat: FLAT_TABLE, conventional: FLAT_TABLE },
+  major: { flat: FLAT_TABLE, conventional: MAJOR_CONVENTIONAL },
   minor: { flat: FLAT_TABLE, conventional: MINOR_CONVENTIONAL },
 };
 
