@@ -168,6 +168,10 @@ main { max-width: 620px; margin: 0 auto; }
 
 .seg { margin: 14px 0 0; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); }
 .seg legend { display: none; }
+.subopts { padding: 2px 0 6px 32px; }
+.subopts label { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; cursor: pointer; }
+.subopts input { width: 17px; height: 17px; accent-color: var(--accent); }
+
 .seg > label { display: flex; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; }
 .seg input { width: 18px; height: 18px; accent-color: var(--accent); }
 
@@ -293,18 +297,17 @@ table.grid input:disabled { cursor: not-allowed; opacity: .28; }
       <fieldset class="seg">
         <legend>Show</legend>
         <label><input type="radio" name="layout" value="progression"><span>Full progression</span></label>
+        <div class="subopts" id="posModeBox">
+          <label><input type="radio" name="posMode" value="shuffled"><span>Position changes for each chord</span></label>
+          <label><input type="radio" name="posMode" value="fixed"><span>Same position for all three</span></label>
+        </div>
         <label><input type="radio" name="layout" value="single"><span>Single chord</span></label>
-      </fieldset>
-      <fieldset class="seg" id="posModeBox">
-        <legend>Position</legend>
-        <label><input type="radio" name="posMode" value="shuffled"><span>Position changes for each chord</span></label>
-        <label><input type="radio" name="posMode" value="fixed"><span>Same position for all three</span></label>
       </fieldset>
       <fieldset class="seg">
         <legend>Key spelling</legend>
-        <label><input type="radio" name="spelling" value="flat"><span>Flat-leaning</span></label>
-        <label><input type="radio" name="spelling" value="conventional"><span>Conventional</span></label>
-        <p class="hint">Note: conventional uses F&#9839; in major, and G&#9839;/C&#9839;/F&#9839; in minor</p>
+        <label><input type="radio" name="spelling" value="conventional"><span>Conventional spelling</span></label>
+        <label><input type="radio" name="spelling" value="flat"><span>Flat-leaning spelling</span></label>
+        <p class="hint">Note: affects minor keys only (in major both spellings are identical)</p>
       </fieldset>
     </div>
   </details>
@@ -475,16 +478,10 @@ const MINOR_CONVENTIONAL = FLAT_TABLE.map((k) => {
   return k;
 });
 
-// Major under conventional spelling. Classical practice takes F# major over Gb
-// at this pitch class -- both carry six accidentals, so the tie breaks on
-// convention, not on the key signature. The flat table keeps Gb, which is how
-// jazz reads it.
-const MAJOR_CONVENTIONAL = FLAT_TABLE.map((k) =>
-  k.pc === 6 ? { pc: 6, name: "F" + S, ii: "G" + S, V: "C" + S, i: "F" + S } : k
-);
-
+// Major uses the same table under both spellings: Gb major either way. Only
+// minor changes, which is why the toggle looks inert in major mode.
 const KEYS = {
-  major: { flat: FLAT_TABLE, conventional: MAJOR_CONVENTIONAL },
+  major: { flat: FLAT_TABLE, conventional: FLAT_TABLE },
   minor: { flat: FLAT_TABLE, conventional: MINOR_CONVENTIONAL },
 };
 
@@ -510,7 +507,7 @@ function defaultState() {
     cells,
     variants: ["extended", "grounded"],
     keys: ALL_PCS.slice(),
-    spelling: "flat",
+    spelling: "conventional",
     showFormula: true,
     showPosition: true,
     layout: "progression",   // "progression" | "single"
@@ -767,15 +764,15 @@ function renderKeys() {
   const wrap = $("keygrid");
   wrap.replaceChildren();
 
-  // The menu is shared by both modes, so under conventional spelling the three
-  // keys that differ are labelled with both names rather than picking a side.
-  const flat = KEYS.major.flat;
-  const conv = KEYS.minor.conventional;
+  // The menu is shared by both modes, so a key is labelled with both names only
+  // where major and minor genuinely disagree under the current spelling. Under
+  // conventional that is A♭/G♯ and D♭/C♯; F♯ is F♯ in both, so it shows alone.
+  const majT = KEYS.major[state.spelling];
+  const minT = KEYS.minor[state.spelling];
 
-  flat.forEach((k, idx) => {
-    const alt = conv[idx].name;
-    const label = state.spelling === "conventional" && alt !== k.name
-      ? `${k.name}/${alt}` : k.name;
+  majT.forEach((k, idx) => {
+    const alt = minT[idx].name;
+    const label = alt === k.name ? k.name : `${k.name}/${alt}`;
 
     const b = el("button", null, label);
     b.type = "button";
